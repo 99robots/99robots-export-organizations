@@ -240,7 +240,37 @@ class NNRobots_Export_Organizations {
 			));
 
 			foreach ($organizations as $organization) {
-			    //fputcsv($export_file, $organization);
+
+			    fputcsv($export_file, array(
+					$organization->ID, 																//'Post ID',
+					date('M d Y', strtotime($organization->post_date) ) , 							//'Published Date',
+					date('M d Y', strtotime($organization->post_modified) ), 						//'Modified Date',
+					$organization->post_title, 														//'Title',
+					self::get_data($organization->ID, 'acronym'),  									//'Acronym',
+					$organization->post_content, 													//'Description',
+					self::get_data($organization->ID, 'notes'), 									//'Notes',
+					self::get_data($organization->ID, 'programs'), 									//'Programs',
+					self::get_data($organization->ID, 'annual_events'),								//'Annual Events',
+					self::get_data($organization->ID, 'postal_address'),							//'Postal Address',
+					self::get_data($organization->ID, 'street'),									//'Street',
+					self::get_data($organization->ID, 'city'),										//'City',
+					self::get_data($organization->ID, 'province'),									//'Province/State',
+					self::get_data($organization->ID, 'postal_code'),								//'Zip Code',
+					self::get_data($organization->ID, 'phone'),										//'Phone',
+					self::get_data($organization->ID, 'fax'),										//'Fax',
+					self::get_data($organization->ID, 'email'),										//'Email',
+					self::get_data($organization->ID, 'website'),									//'Website',
+					self::get_data($organization->ID, 'open_hours'),								//'Open Hours',
+					self::get_data($organization->ID, 'square_footage'),							//'Meeting space',
+					'',//'Contact Name',
+					'',//'Contact Phone',
+					'',//'Contact Email',
+					'',//'Contact Position',
+					self::get_organization_terms($organization->ID, 'org_type'), 					//'Organization Type',
+					self::get_organization_terms($organization->ID, 'post_tag'), 					//'Organization Tags',
+					self::get_parent_categories($organization->ID), 								//'Parent Categories',
+					self::get_child_categories($organization->ID),									//'Child Categories',
+				));
 			}
 
 			fclose($export_file);
@@ -264,6 +294,92 @@ class NNRobots_Export_Organizations {
 		$organization_categories = get_terms('org_category');
 
 		require('admin/views/settings.php');
+	}
+
+	/**
+	 * Get all custom field data
+	 *
+	 * @access public
+	 * @static
+	 * @param mixed $key
+	 * @return void
+	 */
+	static function get_data($post_id, $key) {
+		return implode(',', get_post_meta($post_id, $key));
+	}
+
+	/**
+	 * Return a list of terms of an organization
+	 *
+	 * @access public
+	 * @static
+	 * @param mixed $post_id
+	 * @param mixed $taxonomy
+	 * @return void
+	 */
+	static function get_organization_terms($post_id, $taxonomy){
+
+		$names = array();
+		$terms = wp_get_post_terms($post_id, $taxonomy);
+
+		foreach ( $terms as $term ) {
+			$names[] = $term->name;
+		}
+
+		return implode(',', $names);
+
+	}
+
+	/**
+	 * Get the parent categories for a post
+	 *
+	 * @access public
+	 * @static
+	 * @param mixed $post_id
+	 * @return void
+	 */
+	static function get_parent_categories($post_id) {
+
+		$categories  = wp_get_post_terms($post_id, 'org_category');
+		$parent_cateogries = array();
+
+		foreach ( $categories as $category ) {
+
+			if ( isset($category->parent) && !empty($category->parent) ) {
+				$term = get_term_by('id', $category->parent, 'org_category');
+
+				if ( isset($term) ) {
+					$parent_cateogries[] = $term->name;
+				}
+			}
+		}
+
+		return implode(',', $parent_cateogries);
+	}
+
+	/**
+	 * Get the child categories for a post
+	 *
+	 * @access public
+	 * @static
+	 * @param mixed $post_id
+	 * @return void
+	 */
+	static function get_child_categories($post_id) {
+
+		$categories  = wp_get_post_terms($post_id, 'org_category');
+		$child_cateogries = array();
+
+		foreach ( $categories as $category ) {
+			$terms = get_term_children($category->term_id, 'org_category');
+
+			foreach ( $terms as $value ) {
+				$term = get_term_by('id', $value, 'org_category' );
+				$child_cateogries[] = $term->name;
+			}
+		}
+
+		return implode(',', $child_cateogries);
 	}
 
 }
