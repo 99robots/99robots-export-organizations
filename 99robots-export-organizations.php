@@ -322,7 +322,18 @@ class NNRobots_Export_Organizations {
 	 * @return void
 	 */
 	static function get_data($post_id, $key) {
-		return implode(',', get_post_meta($post_id, $key));
+
+		$data = get_post_meta($post_id, $key, true);
+
+		// Remove all break characters
+
+		$data = preg_replace( "/\r|\n/", "", $data );
+
+		if ( is_array($data) ) {
+			return implode(',', get_post_meta($post_id, $key));
+		}
+
+		return "\t" . $data;
 	}
 
 	/**
@@ -362,12 +373,8 @@ class NNRobots_Export_Organizations {
 
 		foreach ( $categories as $category ) {
 
-			if ( isset($category->parent) && !empty($category->parent) ) {
-				$term = get_term_by('id', $category->parent, 'org_category');
-
-				if ( isset($term) ) {
-					$parent_cateogries[] = $term->name;
-				}
+			if ( !isset($category->parent) || empty($category->parent) ) {
+				$parent_cateogries[] = $category->name;
 			}
 		}
 
@@ -388,11 +395,9 @@ class NNRobots_Export_Organizations {
 		$child_cateogries = array();
 
 		foreach ( $categories as $category ) {
-			$terms = get_term_children($category->term_id, 'org_category');
 
-			foreach ( $terms as $value ) {
-				$term = get_term_by('id', $value, 'org_category' );
-				$child_cateogries[] = $term->name;
+			if ( isset($category->parent) && !empty($category->parent) ) {
+				$child_cateogries[] = $category->name;
 			}
 		}
 
