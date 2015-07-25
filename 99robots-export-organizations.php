@@ -194,14 +194,23 @@ class NNRobots_Export_Organizations {
 				'post_type' 		=> 'organization',
 				'posts_per_page' 	=> -1,
 				'post_status' 		=> 'publish',
-				'tax_query' => array(
+			));
+
+			// Query for Organization categories
+
+			if ( $_GET[self::$prefix_dash . 'organization-category'] != 'all' ) {
+
+				$organizations['tax_query'] = array(
 					array(
 						'taxonomy' 	=> 'org_category',
 						'field' 	=> 'id',
 						'terms' 	=> $_GET[self::$prefix_dash . 'organization-category']
 					)
-				)
-			));
+				);
+
+			}
+
+			error_log(count($organizations));
 
 			// Create file with organization data
 
@@ -229,6 +238,10 @@ class NNRobots_Export_Organizations {
 				'Website',
 				'Open Hours',
 				'Meeting space',
+				'Anniversary Date',
+				'Anniversary Notes',
+				'Misc1',
+				'Misc2',
 				'Contact Name',
 				'Contact Phone',
 				'Contact Email',
@@ -243,10 +256,62 @@ class NNRobots_Export_Organizations {
 
 				$contacts = get_post_meta($organization->ID, 'contacts_multi', true);
 
-				// Loop through all contacts and treat each one as its own entry
+				if ( isset($contacts) && is_array($contacts) && count($contacts) > 0 ) {
 
-				for ($i = 0; $i < $contacts; $i++) {
+					// Loop through all contacts and treat each one as its own entry
 
+					for ($i = 0; $i < $contacts; $i++) {
+
+						$export_array = array(
+							$organization->ID, 																//'Post ID',
+							date('M d Y', strtotime($organization->post_date) ) , 							//'Published Date',
+							date('M d Y', strtotime($organization->post_modified) ), 						//'Modified Date',
+							$organization->post_title, 														//'Title',
+							self::get_data($organization->ID, 'acronym'),  									//'Acronym',
+							$organization->post_content, 													//'Description',
+							self::get_data($organization->ID, 'notes'), 									//'Notes',
+							self::get_data($organization->ID, 'programs'), 									//'Programs',
+							self::get_data($organization->ID, 'annual_events'),								//'Annual Events',
+							self::get_data($organization->ID, 'postal_address'),							//'Postal Address',
+							self::get_data($organization->ID, 'street'),									//'Street',
+							self::get_data($organization->ID, 'city'),										//'City',
+							self::get_data($organization->ID, 'province'),									//'Province/State',
+							self::get_data($organization->ID, 'postal_code'),								//'Zip Code',
+							self::get_data($organization->ID, 'phone'),										//'Phone',
+							self::get_data($organization->ID, 'fax'),										//'Fax',
+							self::get_data($organization->ID, 'email'),										//'Email',
+							self::get_data($organization->ID, 'website'),									//'Website',
+							self::get_data($organization->ID, 'open_hours'),								//'Open Hours',
+							self::get_data($organization->ID, 'square_footage'),							//'Meeting space',
+							self::get_data($organization->ID, 'anniversary_date'),							//'Anniversary Date',
+							self::get_data($organization->ID, 'anniversary_notes'),							//'Anniversary Notes',
+							self::get_data($organization->ID, 'misc1'),										//'Misc1',
+							self::get_data($organization->ID, 'misc2'),										//'Misc2',
+							self::get_data($organization->ID, 'contacts_multi_' . $i . '_contact_name'),	//'Contact Name',
+							self::get_data($organization->ID, 'contacts_multi_' . $i . '_contact-number'),	//'Contact Phone',
+							self::get_data($organization->ID, 'contacts_multi_' . $i . '_contact-email'),	//'Contact Email',
+							self::get_data($organization->ID, 'contacts_multi_' . $i . '_contact-position'),//'Contact Position',
+							self::get_organization_terms($organization->ID, 'org_type'), 					//'Organization Type',
+							self::get_organization_terms($organization->ID, 'post_tag'), 					//'Organization Tags',
+							self::get_parent_categories($organization->ID), 								//'Parent Categories',
+							self::get_child_categories($organization->ID),									//'Child Categories',
+						);
+
+						// Write to the file
+
+					    fputcsv($export_file, $export_array);
+
+						if ( isset($_GET[self::$prefix_dash . 'organization-contacts']) &&
+							$_GET[self::$prefix_dash . 'organization-contacts'] == 'first_contact' ) {
+
+							break;
+						}
+					}
+				}
+
+				// No Contacts so just add organization with blank contact data
+
+				else {
 					$export_array = array(
 						$organization->ID, 																//'Post ID',
 						date('M d Y', strtotime($organization->post_date) ) , 							//'Published Date',
@@ -268,10 +333,14 @@ class NNRobots_Export_Organizations {
 						self::get_data($organization->ID, 'website'),									//'Website',
 						self::get_data($organization->ID, 'open_hours'),								//'Open Hours',
 						self::get_data($organization->ID, 'square_footage'),							//'Meeting space',
-						self::get_data($organization->ID, 'contacts_multi_' . $i . '_contact_name'),	//'Contact Name',
-						self::get_data($organization->ID, 'contacts_multi_' . $i . '_contact-number'),	//'Contact Phone',
-						self::get_data($organization->ID, 'contacts_multi_' . $i . '_contact-email'),	//'Contact Email',
-						self::get_data($organization->ID, 'contacts_multi_' . $i . '_contact-position'),//'Contact Position',
+						self::get_data($organization->ID, 'anniversary_date'),							//'Anniversary Date',
+						self::get_data($organization->ID, 'anniversary_notes'),							//'Anniversary Notes',
+						self::get_data($organization->ID, 'misc1'),										//'Misc1',
+						self::get_data($organization->ID, 'misc2'),										//'Misc2',
+						'',																				//'Contact Name',
+						'',																				//'Contact Phone',
+						'',																				//'Contact Email',
+						'',																				//'Contact Position',
 						self::get_organization_terms($organization->ID, 'org_type'), 					//'Organization Type',
 						self::get_organization_terms($organization->ID, 'post_tag'), 					//'Organization Tags',
 						self::get_parent_categories($organization->ID), 								//'Parent Categories',
@@ -281,13 +350,8 @@ class NNRobots_Export_Organizations {
 					// Write to the file
 
 				    fputcsv($export_file, $export_array);
-
-					if ( isset($_GET[self::$prefix_dash . 'organization-contacts']) &&
-						$_GET[self::$prefix_dash . 'organization-contacts'] == 'first_contact' ) {
-
-						break;
-					}
 				}
+
 			}
 
 			fclose($export_file);
