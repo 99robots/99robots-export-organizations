@@ -12,6 +12,9 @@
 				<label for="<?php echo self::$prefix_dash; ?>organization-category" class="col-sm-3 control-label"><?php _e('Organization Category', self::$text_domain); ?></label>
 				<div class="col-sm-9">
 					<select id="<?php echo self::$prefix_dash; ?>organization-category" name="<?php echo self::$prefix_dash; ?>organization-category">
+
+						<option value="all">-- All --</option>
+
 						<?php foreach ( $organization_categories as $organization_category ) { ?>
 						<option value="<?php echo $organization_category->term_id; ?>"><?php echo $organization_category->name; ?></option>
 						<?php } ?>
