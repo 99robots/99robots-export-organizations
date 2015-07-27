@@ -256,7 +256,7 @@ class NNRobots_Export_Organizations {
 
 				$contacts = get_post_meta($organization->ID, 'contacts_multi', true);
 
-				if ( isset($contacts) && is_array($contacts) && count($contacts) > 0 ) {
+				if ( isset($contacts) && (int) $contacts > 0 ) {
 
 					// Loop through all contacts and treat each one as its own entry
 
