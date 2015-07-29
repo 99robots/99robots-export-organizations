@@ -190,17 +190,17 @@ class NNRobots_Export_Organizations {
 
 			// Get all organizations
 
-			$organizations = get_posts(array(
+			$organizations_args = array(
 				'post_type' 		=> 'organization',
 				'posts_per_page' 	=> -1,
 				'post_status' 		=> 'publish',
-			));
+			);
 
 			// Query for Organization categories
 
 			if ( $_GET[self::$prefix_dash . 'organization-category'] != 'all' ) {
 
-				$organizations['tax_query'] = array(
+				$organizations_args['tax_query'] = array(
 					array(
 						'taxonomy' 	=> 'org_category',
 						'field' 	=> 'id',
@@ -210,7 +210,7 @@ class NNRobots_Export_Organizations {
 
 			}
 
-			error_log(count($organizations));
+			$organizations = get_posts($organizations_args);
 
 			// Create file with organization data
 
